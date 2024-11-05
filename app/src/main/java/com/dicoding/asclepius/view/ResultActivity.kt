@@ -1,8 +1,8 @@
 package com.dicoding.asclepius.view
 
-import androidx.appcompat.app.AppCompatActivity
+import android.net.Uri
 import android.os.Bundle
-import com.dicoding.asclepius.R
+import androidx.appcompat.app.AppCompatActivity
 import com.dicoding.asclepius.databinding.ActivityResultBinding
 
 class ResultActivity : AppCompatActivity() {
@@ -10,10 +10,13 @@ class ResultActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_result)
+        binding = ActivityResultBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        // TODO: Menampilkan hasil gambar, prediksi, dan confidence score.
+        val imageUri = intent.getStringExtra("IMAGE_URI")?.let { Uri.parse(it) }
+        val resultText = intent.getStringExtra("RESULT_TEXT")
+
+        imageUri?.let { binding.resultImage.setImageURI(it) }
+        binding.resultText.text = resultText ?: "No prediction result available."
     }
-
-
 }
