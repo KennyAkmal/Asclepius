@@ -1,22 +1,22 @@
 package com.dicoding.asclepius.view
 
 import android.content.Intent
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.dicoding.asclepius.databinding.ActivityMainBinding
-import com.dicoding.asclepius.ml.CancerClassification
-import org.tensorflow.lite.support.image.TensorImage
+import com.dicoding.asclepius.helper.ImageClassifierHelper
+import org.tensorflow.lite.task.vision.classifier.Classifications
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), ImageClassifierHelper.ClassifierListener {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var classifierHelper: ImageClassifierHelper
     private var currentImageUri: Uri? = null
 
+    // Launcher untuk memilih gambar dari galeri
     private val galleryLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             currentImageUri = it
@@ -30,45 +30,37 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.progressIndicator.visibility = View.GONE
-        binding.analyzeButton.isEnabled = false
-
+        classifierHelper = ImageClassifierHelper(context = this, classifierListener = this)
         binding.galleryButton.setOnClickListener { openGallery() }
         binding.analyzeButton.setOnClickListener { analyzeImage() }
     }
 
+    // Fungsi untuk membuka galeri
     private fun openGallery() {
         galleryLauncher.launch("image/*")
     }
 
+    // Fungsi untuk menganalisis gambar setelah dipilih
     private fun analyzeImage() {
         currentImageUri?.let { uri ->
-            binding.progressIndicator.visibility = View.VISIBLE
-            val bitmap = MediaStore.Images.Media.getBitmap(this.contentResolver, uri)
-            classifyImageWithCancerModel(bitmap)
-        } ?: showToast("No image selected.")
+            classifierHelper.classifyStaticImage(uri)
+        } ?: run {
+            showToast("No image selected.")
+        }
     }
 
-    private fun classifyImageWithCancerModel(bitmap: Bitmap) {
-        val model = CancerClassification.newInstance(this)
+    override fun onResult(resultText: String) {
 
-        val tensorImage = TensorImage.fromBitmap(bitmap)
-        val outputs = model.process(tensorImage)
-        val probabilities = outputs.probabilityAsCategoryList
-
-        model.close()
-
-        binding.progressIndicator.visibility = View.GONE
-        val resultText = probabilities.joinToString("\n") { category ->
-            "Label: ${category.label}, Confidence: ${(category.score * 100).toInt()}%"
-        }
-
-
+        // Mengirimkan data ke ResultActivity
         val intent = Intent(this, ResultActivity::class.java).apply {
-            putExtra("IMAGE_URI", currentImageUri.toString())
-            putExtra("RESULT_TEXT", resultText)
+            putExtra("IMAGE_URI", currentImageUri.toString())  // Kirimkan URI gambar
+            putExtra("RESULT_TEXT", resultText)  // Kirimkan hasil analisis
         }
         startActivity(intent)
+    }
+
+    override fun onError(error: String) {
+        Toast.makeText(this, error, Toast.LENGTH_SHORT).show()
     }
 
     private fun showToast(message: String) {
