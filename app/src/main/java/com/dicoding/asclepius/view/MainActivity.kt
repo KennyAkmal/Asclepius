@@ -63,6 +63,7 @@ class MainActivity : AppCompatActivity() {
             "Label: ${category.label}, Confidence: ${(category.score * 100).toInt()}%"
         }
 
+
         val intent = Intent(this, ResultActivity::class.java).apply {
             putExtra("IMAGE_URI", currentImageUri.toString())
             putExtra("RESULT_TEXT", resultText)
