@@ -17,6 +17,6 @@ class ResultActivity : AppCompatActivity() {
         val resultText = intent.getStringExtra("RESULT_TEXT")
 
         imageUri?.let { binding.resultImage.setImageURI(it) }
-        binding.resultText.text = resultText ?: "No prediction result available."
+        binding.resultText.text = resultText?: "Hasil analisis tidak tersedia"
     }
 }

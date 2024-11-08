@@ -3,7 +3,6 @@ package com.dicoding.asclepius.helper
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.vision.classifier.ImageClassifier
@@ -37,13 +36,13 @@ class ImageClassifierHelper(
         try {
             imageClassifier = ImageClassifier.createFromFileAndOptions(context, modelName, options)
         } catch (e: IOException) {
-            classifierListener?.onError("Error initializing classifier: ${e.localizedMessage}")
+            classifierListener?.onError("Error :${e.localizedMessage}")
         }
     }
 
-    fun classifyStaticImage(uri: Uri) {
+    fun classifyStaticImage(imageUri: Uri) {
         try {
-            val bitmap = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            val bitmap = context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
                 BitmapFactory.decodeStream(inputStream)
             }
             if (bitmap != null) {
@@ -51,20 +50,20 @@ class ImageClassifierHelper(
                 val classifications = imageClassifier?.classify(tensorImage)
 
                 if (classifications.isNullOrEmpty()) {
-                    classifierListener?.onError("No classifications detected.")
+                    classifierListener?.onError("Tidak dapat melakukan klasifikasi")
                 } else {
-                    val highestConfidenceCategory = classifications[0].categories.maxByOrNull { it.score }
-                    val resultText = highestConfidenceCategory?.let { category ->
+                    val highestConfidenceScore = classifications[0].categories.maxByOrNull { it.score }
+                    val resultText = highestConfidenceScore?.let { category ->
                         "${category.label}: ${(category.score * 100).toInt()}%"
-                    } ?: "No classification result available."
+                    } ?: "Hasil analisis tidak tersedia"
 
                     classifierListener?.onResult(resultText)
                 }
             } else {
-                classifierListener?.onError("Failed to load image.")
+                classifierListener?.onError("Gagal memuat gambar")
             }
         } catch (e: IOException) {
-            classifierListener?.onError("Error reading image: ${e.localizedMessage}")
+            classifierListener?.onError("Error: ${e.localizedMessage}")
         }
     }
 }
